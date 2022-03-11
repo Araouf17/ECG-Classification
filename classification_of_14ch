@@ -1,0 +1,75 @@
+import os
+import pandas as pd
+import glob
+from sklearn import preprocessing
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.model_selection import TimeSeriesSplit
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.model_selection import train_test_split ,cross_val_score
+from sklearn.metrics import classification_report, plot_confusion_matrix, confusion_matrix
+import matplotlib.pyplot as plt
+from sklearn.model_selection import StratifiedShuffleSplit
+from sklearn.svm import SVC
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import StandardScaler
+df = pd.concat(map(pd.read_csv, glob.glob('test/*.csv')))
+df =df.drop(['id'], axis=1)
+columns = ['ch1', 'ch2', 'ch3', 'ch4', 'ch5','ch6','ch7','ch8','ch9','ch10','ch11','ch12','ch13','ch4']
+ss = preprocessing.StandardScaler()
+df[columns] = ss.fit_transform(df[columns])
+x=df.drop(['phase'], axis=1)
+y=df['phase']
+x_train, x_test, y_train, y_test = train_test_split(x, y, test_size = 0.2, random_state = 42 ,stratify=y)
+#x_train, x_test, y_train, y_test = StratifiedShuffleSplit(n_splits=5, test_size=0.2, random_state=42)
+model=KNeighborsClassifier(n_neighbors=3)
+
+model.fit(x_train,y_train)
+y_pred = model.predict(x_test)
+plot_confusion_matrix(model, x_test, y_test)
+print(classification_report(y_pred, y_test))
+plt.title("KNN euclidean")
+plt.show()
+model1=KNeighborsClassifier(n_neighbors=1)
+
+model1.fit(x_train,y_train)
+y_pred1 = model1.predict(x_test)
+plot_confusion_matrix(model1, x_test, y_test)
+print(classification_report(y_pred1, y_test))
+plt.title("KNN euclidean")
+plt.show()
+dt = DecisionTreeClassifier(random_state=42)
+dt = dt.fit(x_train, y_train)
+y_pred = dt.predict(x_test)
+print(classification_report(y_pred, y_test))
+plot_confusion_matrix(dt, x_test, y_test)
+plt.title("Decison Tree")
+plt.show()
+rf = RandomForestClassifier(max_depth=10, random_state=42)
+
+rf.fit(x_train,y_train)
+y_pred2 = rf.predict(x_test)
+
+print(classification_report(y_pred2, y_test))
+
+plot_confusion_matrix(rf, x_test, y_test)
+plt.title("Random forrest")
+plt.show()
+CNN_Model = Sequential()
+
+CNN_Model.add(Conv1D(filters=32, kernel_size=(3,), padding='same', activation='relu', input_shape = (x_train.shape[1],1)))
+CNN_Model.add(Conv1D(filters=64, kernel_size=(3,), padding='same', activation='relu')) 
+CNN_Model.add(Conv1D(filters=128, kernel_size=(5,), padding='same', activation='relu'))    
+
+CNN_Model.add(MaxPool1D(pool_size=(3,), strides=2, padding='same'))
+CNN_Model.add(Dropout(0.5))
+
+CNN_Model.add(Flatten())
+
+CNN_Model.add(Dense(units = 512, activation='relu'))
+CNN_Model.add(Dense(units = 1024, activation='relu'))
+CNN_Model.add(Dense(units = 6, activation='softmax'))
+
+CNN_Model.compile(optimizer='adam', loss = 'sparse_categorical_crossentropy', metrics=['accuracy'])
+
+Epochs = CNN_Model.fit(x_train, y_train, epochs = 10)
